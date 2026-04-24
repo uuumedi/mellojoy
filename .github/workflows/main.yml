@@ -1,0 +1,38 @@
+name: MELLOJOY Monitor
+
+on:
+  schedule:
+    - cron: '*/10 * * * *' # 10分ごとに実行します
+  workflow_dispatch: # 手動でテスト実行するためのボタンを追加
+
+permissions:
+  contents: write # メモ帳（JSONファイル）を上書き保存する権限
+
+jobs:
+  check-inventory:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install Libraries
+        run: pip install requests beautifulsoup4
+
+      - name: Run Script
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python monitor.py
+
+      - name: Save Memory
+        run: |
+          git config --global user.name 'GitHub Actions'
+          git config --global user.email 'actions@github.com'
+          git add stock_memory.json
+          git commit -m "在庫メモを更新" || exit 0
+          git push
